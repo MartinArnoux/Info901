@@ -1,0 +1,57 @@
+Martin ARNOUX INFO 901
+
+Diffusion
+
+Avec uniquement des envoie en diffusion (broadcast), l'horloge de chaque Process est identique.
+
+P1 send: ga
+P0 receive: ga lamport: 1
+P2 receive: ga lamport: 1
+P1 lamport: 1
+P1 send: ga
+P0 receive: ga lamport: 2
+P2 receive: ga lamport: 2
+P1 lamport: 2
+
+Avec ses logs, on distingue bien que l'horloge de tous les Process sont identique.
+
+
+
+Message dédiés
+
+Logs : 
+P1 send: ga
+P2 receive: ga lamport: 1
+P1 lamport: 1
+P1 send: ga
+P2 receive: ga lamport: 2
+P1 lamport: 2
+P1 send: ga
+P2 receive: ga lamport: 3
+P1 lamport: 3
+P2 send: ga
+P0 receive: ga lamport: 4
+P2 lamport: 4
+P2 send: ga
+P0 receive: ga lamport: 5
+P2 lamport: 5
+P0 stopped, lamport = 5
+P2 send: ga
+P0 receive: ga lamport: 6
+P2 lamport: 6
+P2 stopped, lamport = 6
+P1 stopped, lamport = 3
+
+P0 stopped, lamport = 5
+P2 stopped, lamport = 6
+P1 stopped, lamport = 3
+
+lamport de base = 0
+Le test a été fait avec P1 qui envoie 3 fois à P2 et P2 envoie 3 fois à P0
+Le résultat attendu sera donc Lamport de P1 : 3 ; Lamport de P2 = 6 ; Lamport de P0 = 6 
+Ce résultat attendu vient du fait que P2 reçoit 3 fois de P1 et envoie 3 fois à P0 donc P2 = 6, P0 prend l'horloge la plus grande, donc celle de P2, 6 
+et P1 n'est plus utilisé après avoir envoyé à P2 3 fois, donc Lamport = 3
+
+On voit avec les logs que les derniers Lamport correspondent aux attentes.
+
+Tous les processus reçoivent tous les messages, mais ne s'occupent pas de ceux qui ne les concernent pas
