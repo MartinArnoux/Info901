@@ -8,6 +8,7 @@ from BroadcastMessage import BroadcastMessage
 from DedicateMessage import DedicateMessage
 from TokenState import TokenState
 from Token import Token
+from MessageSynchro import MessageSyncro
 # Description: Communicateur class for the Info901 project
 class Com():
     nbProcessCreated = 0
@@ -22,6 +23,8 @@ class Com():
         #Token
         self.TokenState = TokenState.NONE
 
+        #Synchronisation
+        self.nbProcessWaiting = 0
         #Gestion des id
         self.myId = Com.nbProcessCreated
         Com.nbProcessCreated +=1
@@ -128,7 +131,21 @@ class Com():
                 self.mutexToken.release()  # Assurer la libération du sémaphore en cas d'exception
 
     def release(self):
+        self.mutexToken.release()
         print (str(self.getMyId()) + " release token")
         self.TokenState = TokenState.RELEASED
         #print(self.getName() + " release token")
     
+
+    #Synchronisation
+    @subscribe(threadMode = Mode.PARALLEL, onEvent=MessageSyncro)
+    def onSyncro(self, event):
+        self.nbProcessWaiting += 1
+
+    def syncronize(self):
+        PyBus.Instance().post(MessageSyncro())
+        while self.nbProcessWaiting < Com.nbProcessCreated:
+            print(str(self.getMyId()) + " wait syncro " + str(self.nbProcessWaiting) + "/" + str(Com.nbProcessCreated))
+            sleep(1)
+        self.nbProcessWaiting = 0
+        print(str(self.getMyId()) + " syncronized")

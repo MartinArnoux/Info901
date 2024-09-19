@@ -18,19 +18,13 @@ from Com import Com
 from pyeventbus3.pyeventbus3 import *
 from Token import Token
 
-class Syncro():
-    def __init__(self):
-        self.syncro = "Syncro"
 
 class Process(Thread):
-    nbProcessCreated = 0
     def __init__(self, name, npProcess):
         Thread.__init__(self)
         
         self.npProcess = npProcess
-        self.myId = Process.nbProcessCreated
         self.com = Com()
-        Process.nbProcessCreated +=1
         self.setName(name)
         self.nbProcessWaiting = 0
 
@@ -43,7 +37,7 @@ class Process(Thread):
         
     def run(self):
         loop = 0
-        if self.myId == self.npProcess-1:
+        if self.com.getMyId() == self.npProcess-1:
             self.com.sendToken(0)
         while self.alive or loop < 10:
             #print(self.getName() + " Loop: " + str(loop))
@@ -61,7 +55,7 @@ class Process(Thread):
 
             if self.com.getMyId() == 0 and loop == 3:
                 try:
-                    self.com.request(0)
+                    self.com.request(10)
                     print(self.getName() + " get SC")
                     sleep(2)
                 except Exception as e:
@@ -94,7 +88,7 @@ class Process(Thread):
             #    self.release()
 
             loop+=1
-        #self.syncronize()
+        self.com.syncronize()
         self.stop()
         print(self.getName() + " stopped, lamport = " + str(self.com.get_clock())) 
 
@@ -111,17 +105,4 @@ class Process(Thread):
 
 
 
-#Synchronisation
-
-    @subscribe(threadMode = Mode.PARALLEL, onEvent=Syncro)
-    def onSyncro(self, event):
-        self.nbProcessWaiting += 1
-
-    def syncronize(self):
-        PyBus.Instance().post(Syncro())
-        while self.nbProcessWaiting < self.npProcess:
-            print(self.getName() + " wait syncro " + str(self.nbProcessWaiting) + "/" + str(self.npProcess))
-            sleep(1)
-        self.nbProcessWaiting = 0
-        print(self.getName() + " syncronized")
 
