@@ -16,11 +16,7 @@ from DedicateMessage import DedicateMessage
 from TokenState import TokenState
 from Com import Com
 from pyeventbus3.pyeventbus3 import *
-
-class Token():
-    def __init__(self,receiver):
-        self.token = "Token"
-        self.receiver = receiver
+from Token import Token
 
 class Syncro():
     def __init__(self):
@@ -36,20 +32,19 @@ class Process(Thread):
         self.com = Com()
         Process.nbProcessCreated +=1
         self.setName(name)
-        self.lamport = Lamport()
-        self.TokenState = TokenState.NONE
-        self.semaphore = threading.Semaphore(0)  # Initialiser le sémaphore à 0
         self.nbProcessWaiting = 0
 
         self.alive = True
         self.start()
         
     @subscribe(threadMode = Mode.PARALLEL, onEvent=Message)
-    def process(self, event):        
+    def process(self, event):
         self.receive_broadcast(event)
         
     def run(self):
         loop = 0
+        if self.myId == self.npProcess-1:
+            self.com.sendToken(0)
         while self.alive or loop < 10:
             #print(self.getName() + " Loop: " + str(loop))
             sleep(1)
@@ -64,6 +59,15 @@ class Process(Thread):
                 print(self.getName() + " send: " + b1.getTrucMuche())
                 self.com.sendTo(b1, 0)
 
+            if self.com.getMyId() == 0 and loop == 3:
+                try:
+                    self.com.request(0)
+                    print(self.getName() + " get SC")
+                    sleep(2)
+                except Exception as e:
+                    print (e)
+                
+                self.com.release()
             #if self.getName() == "P1" and loop < 3:
             #    b1 = TrucMuche("ga")
             #    b2 = TrucMuche("bu")
@@ -75,9 +79,7 @@ class Process(Thread):
             #    b2 = TrucMuche("bu")
             #    print(self.getName() + " send: " + b1.getTrucMuche())
             #    self.sendTo(b1, 0)
-            #if self.myId == self.npProcess-1 and loop == 0:
-            #    print (self.getName() + " init token")
-            #    self.sendToken(0)
+
 
             #if self.myId == 0 and loop == 1:
             #    self.request()
@@ -97,6 +99,7 @@ class Process(Thread):
         print(self.getName() + " stopped, lamport = " + str(self.com.get_clock())) 
 
     def stop(self):
+        self.com.stop()
         self.alive = False
 
     def waitStopped(self):
@@ -106,56 +109,6 @@ class Process(Thread):
 
     
 
-
-##TOKEN
-    def sendToken(self,to):
-        message = Token(to)
-        PyBus.Instance().post(message)
-        self.TokenState = TokenState.NONE
-
-    def receiveToken(self, token):
-        if self.TokenState == TokenState.REQUEST:
-            print(self.getName() + " state SC")
-            self.TokenState = TokenState.SC
-            self.semaphore.release()  # Libérer le sémaphore lorsque le token est reçu
-
-        while self.TokenState == TokenState.SC:
-            print(self.getName() + " SC")
-            sleep(10)
-
-    @subscribe(threadMode = Mode.PARALLEL, onEvent=Token)
-    def onToken(self, event):
-        if self.myId == event.receiver and self.alive == True:
-
-            #print(self.getName() + " receive token",flush=True)
-            self.receiveToken(event)
-
-            next = (self.myId+1)%self.npProcess
-            self.sendToken( next)
-
-    def request(self, timeout=10):
-        self.TokenState = TokenState.REQUEST
-        print(self.getName() + " state REQUEST")
-        
-        try:
-            while not self.TokenState == TokenState.SC:
-                print(self.getName() + " wait token")
-                if not self.semaphore.acquire(timeout=timeout):  # Attente passive avec timeout
-                    print(self.getName() + " timeout waiting for token")
-                    break
-                if not self.alive:
-                    print(self.getName() + " is not alive, exiting wait")
-                    break
-        except Exception as e:
-            print(f"Exception occurred: {e}")
-        finally:
-            if self.TokenState != TokenState.SC:
-                self.semaphore.release()  # Assurer la libération du sémaphore en cas d'exception
-
-    def release(self):
-        print (self.getName() + " release token")
-        self.TokenState = TokenState.RELEASED
-        #print(self.getName() + " release token")
 
 
 #Synchronisation
