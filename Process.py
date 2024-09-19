@@ -14,7 +14,7 @@ from Message import Message
 from BroadcastMessage import BroadcastMessage
 from DedicateMessage import DedicateMessage
 from TokenState import TokenState
-
+from Com import Com
 from pyeventbus3.pyeventbus3 import *
 
 class Token():
@@ -30,16 +30,16 @@ class Process(Thread):
     nbProcessCreated = 0
     def __init__(self, name, npProcess):
         Thread.__init__(self)
-
+        
         self.npProcess = npProcess
         self.myId = Process.nbProcessCreated
+        self.communicateur = Com()
         Process.nbProcessCreated +=1
         self.setName(name)
         self.lamport = Lamport()
         self.TokenState = TokenState.NONE
         self.semaphore = threading.Semaphore(0)  # Initialiser le sémaphore à 0
         self.nbProcessWaiting = 0
-        PyBus.Instance().register(self, self)
 
         self.alive = True
         self.start()
@@ -54,11 +54,10 @@ class Process(Thread):
             #print(self.getName() + " Loop: " + str(loop))
             sleep(1)
 
-            #if self.getName() == "P1":
-            #    b1 = TrucMuche("ga")
-            #    b2 = TrucMuche("bu")
-            #    print(self.getName() + " send: " + b1.getTrucMuche())
-            #    self.broadcast(b1)
+            if self.getName() == "P1":
+                b1 = TrucMuche("ga")
+                print(self.getName() + " send: " + b1.getTrucMuche())
+                self.communicateur.broadcast(b1)
             
 
             #if self.getName() == "P1" and loop < 3:
@@ -72,24 +71,24 @@ class Process(Thread):
             #    b2 = TrucMuche("bu")
             #    print(self.getName() + " send: " + b1.getTrucMuche())
             #    self.sendTo(b1, 0)
-            if self.myId == self.npProcess-1 and loop == 0:
-                print (self.getName() + " init token")
-                self.sendToken(0)
+            #if self.myId == self.npProcess-1 and loop == 0:
+            #    print (self.getName() + " init token")
+            #    self.sendToken(0)
 
-            if self.myId == 0 and loop == 1:
-                self.request()
-                print(self.getName() + " get token")
-                sleep(10)
-                self.release()
+            #if self.myId == 0 and loop == 1:
+            #    self.request()
+            #    print(self.getName() + " get token")
+            #    sleep(10)
+            #    self.release()
 
-            if self.myId == 2 and loop == 9:
-                self.request(20)
-                print(self.getName() + " get token")
-                sleep(10)
-                self.release()
+            #if self.myId == 2 and loop == 9:
+            #    self.request(20)
+            #    print(self.getName() + " get token")
+            #    sleep(10)
+            #    self.release()
 
             loop+=1
-        self.syncronize()
+        #self.syncronize()
         self.stop()
         print(self.getName() + " stopped, lamport = " + str(self.lamport.getLamport())) 
 
@@ -99,17 +98,7 @@ class Process(Thread):
     def waitStopped(self):
         self.join()
     
-    @subscribe(threadMode = Mode.PARALLEL, onEvent=BroadcastMessage)
-    def onBroadcast(self, event):
-        if(self.myId != event.sender):
-            self.lamport.updateLamport(event.get_estampille())
-            print(self.getName() + " receive: " + str(event.get_content().getTrucMuche()) + " lamport: " + str(self.lamport.getLamport()))
-        
-    def broadcast(self,o):
-        broadcast = BroadcastMessage(self.lamport.getLamport(),o,self.myId)
-        PyBus.Instance().post(broadcast)
-        self.lamport.incrementLamport()
-        print(self.getName() + " lamport: " + str(self.lamport.getLamport()))
+    
 
     @subscribe(threadMode = Mode.PARALLEL, onEvent=DedicateMessage)
     def onReceive(self, event):
