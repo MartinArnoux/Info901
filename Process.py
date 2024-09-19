@@ -89,6 +89,7 @@ class Process(Thread):
 
             loop+=1
         self.com.syncronize()
+        print("End of " + self.getName())
         self.stop()
         print(self.getName() + " stopped, lamport = " + str(self.com.get_clock())) 
 

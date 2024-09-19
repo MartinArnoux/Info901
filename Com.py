@@ -28,6 +28,10 @@ class Com():
         #Gestion des id
         self.myId = Com.nbProcessCreated
         Com.nbProcessCreated +=1
+
+        #Boite aux lettres
+        self.mailbox = []
+
         self.alive = True
         
 
@@ -43,6 +47,7 @@ class Com():
         finally:
             self.semaphore.release()
 
+
     def get_clock(self):
         self.semaphore.acquire()
         try:
@@ -54,12 +59,21 @@ class Com():
     def getMyId(self):
         return self.myId
 
+    def receive_message(self, message):
+        self.mailbox.append(message)
+        self.inc_clock()
+
+    def get_oldest_message(self):
+        return self.mailbox.pop(0)
+
+    def get_earliest_message(self):
+        return self.mailbox.pop()
 
     #Function for Broadcast Message 
     @subscribe(threadMode = Mode.PARALLEL, onEvent=BroadcastMessage)
     def onBroadcast(self, event):
         if(self.myId != event.sender):
-            self.lamport.updateLamport(event.get_stamp())
+            self.receive_message(event)
             print(str(self.myId) + " receive: " + str(event.get_payload().getTrucMuche()))
         
     def broadcast(self,o):
@@ -72,7 +86,7 @@ class Com():
     @subscribe(threadMode = Mode.PARALLEL, onEvent=DedicateMessage)
     def onReceive(self, event):
         if(self.myId == event.receiver):
-            self.lamport.updateLamport(event.get_stamp())
+            self.receive_message(event)
             print(str(self.myId) + " receive: " + str(event.get_payload().getTrucMuche()))
 
     def sendTo(self,o,to):
@@ -83,7 +97,7 @@ class Com():
 
 
     
-##TOKEN
+    ##TOKEN
 
     def init_token(self, first_position):
         self.sendToken(first_position)
@@ -107,7 +121,6 @@ class Com():
     def onToken(self, event):
         if self.myId == event.receiver and self.alive == True:
             self.receiveToken(event)
-
             next = (self.myId+1)%self.nbProcessCreated
             self.sendToken( next)
 
@@ -131,7 +144,6 @@ class Com():
                 self.mutexToken.release()  # Assurer la libération du sémaphore en cas d'exception
 
     def release(self):
-        self.mutexToken.release()
         print (str(self.getMyId()) + " release token")
         self.TokenState = TokenState.RELEASED
         #print(self.getName() + " release token")
@@ -143,6 +155,7 @@ class Com():
         self.nbProcessWaiting += 1
 
     def syncronize(self):
+        #On peut ajouter un timeout pour éviter les blocages mais 
         PyBus.Instance().post(MessageSyncro())
         while self.nbProcessWaiting < Com.nbProcessCreated:
             print(str(self.getMyId()) + " wait syncro " + str(self.nbProcessWaiting) + "/" + str(Com.nbProcessCreated))

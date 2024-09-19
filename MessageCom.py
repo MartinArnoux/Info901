@@ -6,6 +6,7 @@ class MessageCom(abc.ABC):
         self.payload = payload 
         self.sender = sender
         self.receiver = to
+        
 
     def get_sender(self):
         return self.sender    
