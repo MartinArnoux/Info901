@@ -33,7 +33,7 @@ class Process(Thread):
         
         self.npProcess = npProcess
         self.myId = Process.nbProcessCreated
-        self.communicateur = Com()
+        self.com = Com()
         Process.nbProcessCreated +=1
         self.setName(name)
         self.lamport = Lamport()
@@ -54,11 +54,15 @@ class Process(Thread):
             #print(self.getName() + " Loop: " + str(loop))
             sleep(1)
 
-            if self.getName() == "P1":
-                b1 = TrucMuche("ga")
+            if self.com.getMyId() == 1 and loop == 1:
+                b1 = TrucMuche("Broadcast Message")
                 print(self.getName() + " send: " + b1.getTrucMuche())
-                self.communicateur.broadcast(b1)
+                self.com.broadcast(b1)
             
+            if self.com.getMyId() == 1 and loop == 2:
+                b1 = TrucMuche("Dedicate Message")
+                print(self.getName() + " send: " + b1.getTrucMuche())
+                self.com.sendTo(b1, 0)
 
             #if self.getName() == "P1" and loop < 3:
             #    b1 = TrucMuche("ga")
@@ -90,7 +94,7 @@ class Process(Thread):
             loop+=1
         #self.syncronize()
         self.stop()
-        print(self.getName() + " stopped, lamport = " + str(self.lamport.getLamport())) 
+        print(self.getName() + " stopped, lamport = " + str(self.com.get_clock())) 
 
     def stop(self):
         self.alive = False
@@ -100,18 +104,7 @@ class Process(Thread):
     
     
 
-    @subscribe(threadMode = Mode.PARALLEL, onEvent=DedicateMessage)
-    def onReceive(self, event):
-        print(self.getName() + " receive: " + str(event.get_content().getTrucMuche()) + " lamport: " + str(self.lamport.getLamport()))
-        if(self.myId == event.receiver):
-            self.lamport.updateLamport(event.get_estampille())
-            print(self.getName() + " receive: " + str(event.get_content().getTrucMuche()) + " lamport: " + str(self.lamport.getLamport()))
-
-    def sendTo(self,o,to):
-        message = DedicateMessage(self.lamport.getLamport(),o,to)
-        PyBus.Instance().post(message)
-        self.lamport.incrementLamport()
-        print(self.getName() + " lamport: " + str(self.lamport.getLamport()))
+    
 
 
 ##TOKEN

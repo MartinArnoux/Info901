@@ -1,11 +1,11 @@
 import abc
 
 class MessageCom(abc.ABC):
-    def __init__(self,payload,stamp,sender,to):
+    def __init__(self,payload="No Payload",stamp=-1,sender=None,to=None):
         self.stamp = stamp
         self.payload = payload 
         self.sender = sender
-        self.to = to
+        self.receiver = to
 
     def get_sender(self):
         return self.sender    
@@ -16,5 +16,5 @@ class MessageCom(abc.ABC):
     def get_stamp(self):
         return self.stamp
 
-    def get_to(self):
-        return self.to
+    def get_receiver(self):
+        return self.receiver

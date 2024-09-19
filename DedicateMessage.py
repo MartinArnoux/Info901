@@ -1,11 +1,9 @@
-from Message import Message
+from MessageCom import MessageCom
 
-class DedicateMessage(Message):
-    def __init__(self, estampille, message, receiver):
-        super().__init__(estampille, message)
-        self.receiver = receiver
+class DedicateMessage(MessageCom):
+    def __init__(self, payload, stamp, receiver):
+        super().__init__(payload, stamp, to=receiver)
+        
 
     def __str__(self):
         return f"Message: {self.message}, Sender: {self.sender}"
-    def get_receiver(self):
-        return self.receiver
