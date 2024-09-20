@@ -23,10 +23,8 @@ class Process(Thread):
     def __init__(self, name, npProcess):
         Thread.__init__(self)
         print("Process created")
-        self.npProcess = npProcess
         self.com = Com()
         self.setName(name)
-        self.nbProcessWaiting = 0
 
         self.alive = True
         self.start()
@@ -34,15 +32,22 @@ class Process(Thread):
     @subscribe(threadMode = Mode.PARALLEL, onEvent=Message)
     def process(self, event):
         self.receive_broadcast(event)
-        
+
+    def getMyId(self):
+        return self.com.getMyId()    
+    
     def run(self):
         self.com.initialize()
+        print(self.getName() + " à l'id " + str(self.com.getMyId()))
         loop = 0
-        if self.com.getMyId() == self.npProcess-1:
-            self.com.sendToken(0)
-        while self.alive or loop < 10:
+        while self.alive :
             #print(self.getName() + " Loop: " + str(loop))
             sleep(1)
+            if self.com.getMyId() == 0:
+                print (self.getName() + " Loop: " + str(loop))
+            if loop == 0:
+                print(self.getName() + " Syncro ")
+                self.com.synchronize()
 
             if self.com.getMyId() == 1 and loop == 1:
                 b1 = TrucMuche("Broadcast Message")
@@ -56,13 +61,27 @@ class Process(Thread):
 
             if self.com.getMyId() == 0 and loop == 3:
                 try:
-                    self.com.request(10)
+                    self.com.requestSC(15)
                     print(self.getName() + " get SC")
                     sleep(2)
+                    
+                    print(self.getName() + " release SC")
                 except Exception as e:
                     print (e)
-                
-                self.com.release()
+                self.com.releaseSC()
+
+            if self.com.getMyId() == 2 and loop == 4:
+                print(self.getName() + " send sync")
+                self.com.sendToSync("J'ai un message pour toi", 1)
+            if self.com.getMyId() == 1 and loop == 4:
+                print(self.getName() + " receive sync: ")
+                print(self.getName() + " receive: " + self.com.recevFromSync(2).get_payload())
+            # if(self.getMyId() == 0 and loop == 4):
+            #     self.com.sendToSync("J'ai un message pour toi", 1)
+            
+            if(self.getMyId() == 1 and loop == 5):
+                pass
+                #print(self.getName() + " receive: " + self.com.recevFromSync(0))
             #if self.getName() == "P1" and loop < 3:
             #    b1 = TrucMuche("ga")
             #    b2 = TrucMuche("bu")
@@ -89,7 +108,6 @@ class Process(Thread):
             #    self.release()
 
             loop+=1
-        self.com.syncronize()
         print("End of " + self.getName())
         self.stop()
         print(self.getName() + " stopped, lamport = " + str(self.com.get_clock())) 

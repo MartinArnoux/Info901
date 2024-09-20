@@ -1,8 +1,8 @@
 from MessageCom import MessageCom
 
 class MessageSysteme(MessageCom):
-    def __init__(self, expediteur, destinataire, contenu,type = "MessageSysteme"):
-        MessageCom.__init__(self, expediteur, destinataire, contenu)
+    def __init__(self, contenu, stamp, sender, receiver,type = "MessageSysteme"):
+        MessageCom.__init__(self, contenu, stamp,sender, receiver)
         self._type = type
 
     def get_type(self):

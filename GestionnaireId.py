@@ -15,15 +15,21 @@ class CreateId:
 
 class GestionnaireId:
     def __init__(self):
+        """
+        Constructor
+        """
         self.id = 0
+        self.number_of_process = 0
         self.number_drawn = None
         self.mutexList = Lock()
         self.received_numbers = Queue()
         PyBus.Instance().register(self, self)
         self.create_my_Id()
-        self.number_of_process = 0
 
     def getId(self):
+        """
+        Get the id of the process
+        """
         return self.id
 
     def __str__(self):
@@ -31,12 +37,15 @@ class GestionnaireId:
 
     # Creation des id
     def create_my_Id(self):
+        """
+        Create the id of the process
+        """
         # Tirage aléatoire d'un nombre
         self.number_drawn = math.floor(random.random() * 100000)
         # Envoie du nombre tiré
         sleep(1)
         self.sendMyNumberForId(self.number_drawn)
-        sleep(10)
+        sleep(5)
         # Collect received numbers from the queue
         received_numbers_list = []
         while not self.received_numbers.empty():
@@ -46,7 +55,7 @@ class GestionnaireId:
         while len(unique_numbers) < len(received_numbers_list):
             self.number_drawn = math.floor(random.random() * 100000)
             self.sendMyNumberForId(self.number_drawn)
-            sleep(10)   
+            sleep(5)
             while not self.received_numbers.empty():
                 received_numbers_list.append(self.received_numbers.get())
             unique_numbers = set(received_numbers_list)
@@ -57,11 +66,23 @@ class GestionnaireId:
 
     
     def sendMyNumberForId(self, number_drawn):
+        """
+        Send the number drawn to the other processes
+        
+        Args:
+            number_drawn (int): The number drawn
+        """
         message = CreateId(number_drawn)
         PyBus.Instance().post(message)
 
     @subscribe(threadMode = Mode.PARALLEL, onEvent=CreateId)
     def onCreateId(self, event):
+        """
+        Store the received number drawn
+        
+        Args:
+            event (CreateId): The event containing the number drawn
+        """
         self.mutexList.acquire()
         self.received_numbers.put(event.get_number_drawn())
         self.mutexList.release()
