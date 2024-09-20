@@ -70,42 +70,17 @@ class Process(Thread):
                     print (e)
                 self.com.releaseSC()
 
-            if self.com.getMyId() == 2 and loop == 4:
+            if loop == 4:
+                self.com.broadcastSync("J'ai un message pour vous",0)
+
+            if self.com.getMyId() == 2 and loop == 6:
                 print(self.getName() + " send sync")
                 self.com.sendToSync("J'ai un message pour toi", 1)
-            if self.com.getMyId() == 1 and loop == 4:
+            if self.com.getMyId() == 1 and loop == 6:
                 print(self.getName() + " receive sync: ")
                 print(self.getName() + " receive: " + self.com.recevFromSync(2).get_payload())
-            # if(self.getMyId() == 0 and loop == 4):
-            #     self.com.sendToSync("J'ai un message pour toi", 1)
             
-            if(self.getMyId() == 1 and loop == 5):
-                pass
-                #print(self.getName() + " receive: " + self.com.recevFromSync(0))
-            #if self.getName() == "P1" and loop < 3:
-            #    b1 = TrucMuche("ga")
-            #    b2 = TrucMuche("bu")
-            #    print(self.getName() + " send: " + b1.getTrucMuche())
-            #    self.sendTo(b1, 2)
 
-            #if self.getName() == "P2" and loop >6:
-            #    b1 = TrucMuche("ga")
-            #    b2 = TrucMuche("bu")
-            #    print(self.getName() + " send: " + b1.getTrucMuche())
-            #    self.sendTo(b1, 0)
-
-
-            #if self.myId == 0 and loop == 1:
-            #    self.request()
-            #    print(self.getName() + " get token")
-            #    sleep(10)
-            #    self.release()
-
-            #if self.myId == 2 and loop == 9:
-            #    self.request(20)
-            #    print(self.getName() + " get token")
-            #    sleep(10)
-            #    self.release()
 
             loop+=1
         print("End of " + self.getName())

@@ -338,16 +338,11 @@ class Com():
             sender (int): The ID of the sender
         """
         if(self.getMyId() == sender):
-            self.broadcast(o)
-            number_of_ack = 0
-            while number_of_ack < self.gestionnaireId.number_of_process :
-                message = self._searchSystemMessage("Acknowledgement")
-                if message != None:
-                    number_of_ack += 1
-                    self.systemMailbox.remove(message)
-                sleep(1)
+            for i in range(self.getNbProcess()):
+                if i != sender:
+                    self.sendToSync(o,i)              
         else:
-            self.synchronize()
+            self.recevFromSync(sender)
             
         
 
