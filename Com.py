@@ -2,6 +2,7 @@ import threading
 from threading import Lock, Thread
 from pyeventbus3.pyeventbus3 import *
 from time import sleep
+from random import randint
 
 from Lamport import Lamport
 from BroadcastMessage import BroadcastMessage
@@ -9,31 +10,49 @@ from DedicateMessage import DedicateMessage
 from TokenState import TokenState
 from Token import Token
 from MessageSynchro import MessageSyncro
-# Description: Communicateur class for the Info901 project
+from GestionnaireId import GestionnaireId
+
+
 class Com():
+    
     nbProcessCreated = 0
     def __init__(self):
-        #Gestion des horloges
+        print("Com created")
+        # Initialisation dans un thread séparé
+
+
+        # Gestion des horloges
+        self.nbProcessCreated = 1
         self.lamport = Lamport()
-        self.semaphore = threading.Semaphore(1)
-        
+        self.mutexLamport = threading.Lock()
+
         self.mutexToken = threading.Lock()
         PyBus.Instance().register(self, self)
         
-        #Token
+        
+        # Synchronisation
+        self.nbProcessWaiting = 0
+
+        # Token
         self.TokenState = TokenState.NONE
 
-        #Synchronisation
-        self.nbProcessWaiting = 0
-        #Gestion des id
-        self.myId = Com.nbProcessCreated
-        Com.nbProcessCreated +=1
-
-        #Boite aux lettres
+        # Boite aux lettres
         self.mailbox = []
 
         self.alive = True
+
+    def initialize(self):
+        print("Com initialized")
+        # Gestion des id
+        self.myId = 0
+        self.createMyId()
+
         
+    def createMyId(self):
+        self.gestionnaireId = GestionnaireId()
+        self.gestionnaireId.create_my_Id()
+        self.myId = self.gestionnaireId.getId()
+        print("My id is " + str(self.myId))
 
 
     def stop(self):
@@ -41,24 +60,19 @@ class Com():
 
     # Gestion des horloges
     def inc_clock(self):
-        self.semaphore.acquire()
-        try:
+        with self.mutexLamport:
             self.lamport.incrementLamport()
-        finally:
-            self.semaphore.release()
 
 
     def get_clock(self):
-        self.semaphore.acquire()
-        try:
+        with self.mutexLamport:
             return self.lamport.getLamport()
-        finally:
-            self.semaphore.release()
 
 
     def getMyId(self):
         return self.myId
-
+    
+    #Boite au lettre
     def receive_message(self, message):
         self.mailbox.append(message)
         self.inc_clock()
@@ -68,6 +82,7 @@ class Com():
 
     def get_earliest_message(self):
         return self.mailbox.pop()
+    ############################
 
     #Function for Broadcast Message 
     @subscribe(threadMode = Mode.PARALLEL, onEvent=BroadcastMessage)
@@ -150,6 +165,8 @@ class Com():
     
 
     #Synchronisation
+    #Manque la mise a jour de lamport !!!
+
     @subscribe(threadMode = Mode.PARALLEL, onEvent=MessageSyncro)
     def onSyncro(self, event):
         self.nbProcessWaiting += 1
@@ -160,5 +177,6 @@ class Com():
         while self.nbProcessWaiting < Com.nbProcessCreated:
             print(str(self.getMyId()) + " wait syncro " + str(self.nbProcessWaiting) + "/" + str(Com.nbProcessCreated))
             sleep(1)
+        
         self.nbProcessWaiting = 0
         print(str(self.getMyId()) + " syncronized")

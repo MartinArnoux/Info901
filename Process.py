@@ -22,7 +22,7 @@ from Token import Token
 class Process(Thread):
     def __init__(self, name, npProcess):
         Thread.__init__(self)
-        
+        print("Process created")
         self.npProcess = npProcess
         self.com = Com()
         self.setName(name)
@@ -36,6 +36,7 @@ class Process(Thread):
         self.receive_broadcast(event)
         
     def run(self):
+        self.com.initialize()
         loop = 0
         if self.com.getMyId() == self.npProcess-1:
             self.com.sendToken(0)
