@@ -1,11 +1,11 @@
 from time import sleep
-from Process import Process
-
+#from Process import Process
+from Exemple import Process
 def launch(nbProcess, runningTime=5):
     processes = []
 
     for i in range(nbProcess):
-        processes = processes + [Process("P"+str(i), nbProcess)]
+        processes = processes + [Process("P"+str(i))]
 
     sleep(runningTime)
 

@@ -11,17 +11,21 @@ class Process(Thread):
 
         self.com = Com()
         
-        self.nbProcess = self.com.getNbProcess()
+        #self.nbProcess = self.com.getNbProcess()
 
-        self.myId = self.com.getMyId()
+        #self.myId = self.com.getMyId()
         self.setName(name)
 
 
         self.alive = True
         self.start()
     
+    def waitStopped(self):
+        self.join()
+    
 
     def run(self):
+        self.com.initialize()
         loop = 0
         while self.alive:
             print(self.getName() + " Loop: " + str(loop))
@@ -38,29 +42,29 @@ class Process(Thread):
                 self.com.synchronize()
                     
                 self.com.requestSC()
-                if self.com.mailbox.isEmpty():
+                if self.com.mailbox_is_empty():
                     print("Catched !")
                     self.com.broadcast("J'ai gagné !!!")
                 else:
-                    msg = self.com.mailbox.getMsg();
+                    msg = self.com.get_oldest_message();
                     print(str(msg.getSender())+" à eu le jeton en premier")
                 self.com.releaseSC()
 
 
             if self.getName() == "P1":
-                if not self.com.mailbox.isEmpty():
-                    self.com.mailbox.getMessage()
+                if not self.com.mailbox_is_empty():
+                    self.com.get_oldest_message()
                     self.com.recevFromSync(msg, 0)
 
                     self.com.synchronize()
                     
                     self.com.requestSC()
-                    if self.com.mailbox.isEmpty():
+                    if self.com.mailbox_is_empty():
                         print("Catched !")
                         self.com.broadcast("J'ai gagné !!!")
                     else:
-                        msg = self.com.mailbox.getMsg();
-                        print(str(msg.getSender())+" à eu le jeton en premier")
+                        msg = self.com.get_oldest_message();
+                        print(str(msg.get_sender())+" à eu le jeton en premier")
                     self.com.releaseSC()
                     
             if self.getName() == "P2":
