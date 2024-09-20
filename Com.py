@@ -42,6 +42,7 @@ class Com():
         self.alive = True
 
     def initialize(self):
+        sleep(1)
         print("Com initialized")
         # Gestion des id
         self.myId = 0
@@ -50,9 +51,7 @@ class Com():
         
     def createMyId(self):
         self.gestionnaireId = GestionnaireId()
-        self.gestionnaireId.create_my_Id()
         self.myId = self.gestionnaireId.getId()
-        print("My id is " + str(self.myId))
 
 
     def stop(self):
